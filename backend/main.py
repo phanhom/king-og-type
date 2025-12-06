@@ -95,6 +95,7 @@ class GameManager:
             room_data = {
                 'id': room_id,
                 'users': [],
+                'owner': None,  # 房主ID
                 'game_started': False,
                 'words': [],
                 'text': '',  # 中文文本
@@ -112,8 +113,7 @@ class GameManager:
             return False
             
         room = self.rooms[room_id]
-        if len(room['users']) >= 2:
-            return False  # 房间已满
+        # 移除人数限制，允许多人加入
             
         if user_id not in room['users']:
             room['users'].append(user_id)
@@ -126,12 +126,9 @@ class GameManager:
                 'cursor_position': 0
             }
             
-            # 如果房间有2个人，开始5秒倒计时
-            if len(room['users']) == 2:
-                asyncio.create_task(self.start_countdown(room_id))
-            else:
-                # 单人练习模式，可以立即开始
-                pass
+            # 如果房间为空，第一个加入的人成为房主
+            if room['owner'] is None:
+                room['owner'] = user_id
                 
         return True
     
@@ -142,6 +139,13 @@ class GameManager:
                 room['users'].remove(user_id)
                 if user_id in room['player_progress']:
                     del room['player_progress'][user_id]
+                
+            # 如果离开的是房主，将房主转移给第一个用户
+            if room['owner'] == user_id:
+                if len(room['users']) > 0:
+                    room['owner'] = room['users'][0]
+                else:
+                    room['owner'] = None
                 
             # 取消倒计时
             if room_id in self.room_countdowns:
@@ -156,6 +160,7 @@ class GameManager:
                 room['game_started'] = False
                 room['words'] = []
                 room['start_time'] = None
+                room['owner'] = None
             else:
                 # 如果还有用户，停止游戏
                 room['game_started'] = False
@@ -174,7 +179,7 @@ class GameManager:
             return
             
         room = self.rooms[room_id]
-        if len(room['users']) != 2:
+        if len(room['users']) == 0:
             return
         
         # 生成单词列表
@@ -182,7 +187,7 @@ class GameManager:
         
         # 发送倒计时
         for countdown in range(5, 0, -1):
-            if room_id not in self.rooms or len(self.rooms[room_id]['users']) != 2:
+            if room_id not in self.rooms or len(self.rooms[room_id]['users']) == 0:
                 return
                 
             for user_id in room['users']:
@@ -195,7 +200,7 @@ class GameManager:
             await asyncio.sleep(1)
         
         # 开始游戏
-        if room_id in self.rooms and len(self.rooms[room_id]['users']) == 2:
+        if room_id in self.rooms and len(self.rooms[room_id]['users']) > 0:
             await self.start_game(room_id)
     
     async def start_game(self, room_id: str):
@@ -391,17 +396,25 @@ class GameManager:
             'cursor_position': cursor_position
         }
         
-        # 广播给房间内其他用户
+        # 广播给房间内其他用户（包括所有玩家的进度）
+        all_progress = {}
+        for uid in room['users']:
+            if uid in room['player_progress']:
+                progress = room['player_progress'][uid]
+                user_info = self.user_data.get(uid, {})
+                all_progress[uid] = {
+                    'username': user_info.get('username', ''),
+                    'word_index': progress.get('word_index', 0),
+                    'char_index': progress.get('char_index', 0),
+                    'words_completed': progress.get('words_completed', 0),
+                    'cursor_position': progress.get('cursor_position', 0)
+                }
+        
         for other_user_id in room['users']:
-            if other_user_id != user_id and other_user_id in self.connected_users:
+            if other_user_id in self.connected_users:
                 await self.send_message(other_user_id, {
-                    'type': 'opponent_progress',
-                    'user_id': user_id,
-                    'username': user_data['username'],
-                    'word_index': word_index,
-                    'char_index': char_index,
-                    'words_completed': words_completed,
-                    'cursor_position': cursor_position
+                    'type': 'players_progress',
+                    'all_progress': all_progress
                 })
     
     def get_room_data(self, room_id: str) -> Dict:
@@ -416,6 +429,12 @@ class GameManager:
             }
             for uid in room['users']
         ]
+        # 添加房主信息
+        if room['owner']:
+            owner_data = self.user_data.get(room['owner'], {})
+            room['owner_username'] = owner_data.get('username', '')
+        else:
+            room['owner_username'] = ''
         return room
     
     def get_all_rooms(self) -> List[Dict]:
@@ -523,11 +542,13 @@ async def handle_websocket_message(user_id: str, message: Dict):
         
         if success:
             room_data = game_manager.get_room_data(room_id)
+            room = game_manager.rooms[room_id]
             await game_manager.send_message(user_id, {
                 'type': 'room_joined',
                 'room_id': room_id,
                 'users': room_data['users'],
-                'is_solo': len(room_data['users']) == 1
+                'is_owner': room['owner'] == user_id,
+                'owner_username': room_data.get('owner_username', '')
             })
             
             # 单人模式不自动开始，等待用户点击开始练习
@@ -536,9 +557,11 @@ async def handle_websocket_message(user_id: str, message: Dict):
             room = game_manager.rooms[room_id]
             for other_user_id in room['users']:
                 if other_user_id != user_id and other_user_id in game_manager.connected_users:
+                    room_data = game_manager.get_room_data(room_id)
                     await game_manager.send_message(other_user_id, {
                         'type': 'room_user_joined',
-                        'users': game_manager.get_room_data(room_id)['users']
+                        'users': room_data['users'],
+                        'owner_username': room_data.get('owner_username', '')
                     })
             
             await game_manager.broadcast_user_update()
@@ -546,7 +569,7 @@ async def handle_websocket_message(user_id: str, message: Dict):
         else:
             await game_manager.send_message(user_id, {
                 'type': 'error',
-                'message': '无法加入房间（房间可能已满）'
+                'message': '无法加入房间'
             })
         
     elif message_type == 'leave_room':
@@ -582,8 +605,34 @@ async def handle_websocket_message(user_id: str, message: Dict):
             user_id, word_index, char_index, words_completed, cursor_position
         )
         
+    elif message_type == 'start_game':
+        """房主开始游戏"""
+        user_data = game_manager.user_data.get(user_id, {})
+        if 'room_id' not in user_data:
+            return
+        
+        room_id = user_data['room_id']
+        if room_id not in game_manager.rooms:
+            return
+        
+        room = game_manager.rooms[room_id]
+        # 检查是否是房主
+        if room['owner'] != user_id:
+            await game_manager.send_message(user_id, {
+                'type': 'error',
+                'message': '只有房主可以开始游戏'
+            })
+            return
+        
+        # 检查游戏是否已开始
+        if room['game_started']:
+            return
+        
+        # 启动倒计时
+        asyncio.create_task(game_manager.start_countdown(room_id))
+    
     elif message_type == 'start_solo_practice':
-        """开始单人练习模式"""
+        """开始单人练习模式（保留兼容性）"""
         user_data = game_manager.user_data.get(user_id, {})
         if 'room_id' not in user_data:
             return
