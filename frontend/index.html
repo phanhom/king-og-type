@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>King of Type - 多人打字对战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000000;
+            min-height: 100vh;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #app {
+            max-width: 100%;
+            margin: 0;
+            padding: 10px;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 10px;
+            min-height: 100vh;
+        }
+        
+        .game-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .lobby-area {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .typing-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 24px;
+            line-height: 1.8;
+            min-height: 400px;
+            margin-bottom: 15px;
+        }
+        
+        .word {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .word.current {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .letter {
+            display: inline-block;
+        }
+        
+        .letter.correct {
+            color: #4CAF50;
+        }
+        
+        .letter.incorrect {
+            color: #F44336;
+            background: rgba(244, 67, 54, 0.2);
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 6px;
+            height: 42px;
+            background: #4CAF50;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .room-list, .user-list {
+            margin-bottom: 20px;
+        }
+        
+        .room-item, .user-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .room-item:hover, .user-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .room-item.active {
+            background: rgba(76, 175, 80, 0.3);
+            border: 1px solid #4CAF50;
+        }
+        
+        .room-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .room-users {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #45a049;
+        }
+        
+        .button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .opponent-cursor {
+            display: inline-block;
+            width: 6px;
+            height: 42px;
+            background: #FF9800;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

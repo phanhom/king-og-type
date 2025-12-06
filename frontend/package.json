@@ -1,0 +1,18 @@
+{
+  "name": "monkey-type-multiplayer",
+  "version": "1.0.0",
+  "description": "多人打字竞速网站",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.2.3",
+    "vite": "^4.4.5"
+  }
+}
