@@ -5,9 +5,9 @@
       <div class="users-panel-left" v-if="connected && username">
         <h2 class="panel-title">在线用户</h2>
         <div class="users-list-left">
-          <div 
+              <div 
             v-for="user in onlineUsers" 
-            :key="user.id"
+                :key="user.id"
             class="user-item-left"
           >
             <span class="user-name-left">{{ user.username }}</span>
@@ -69,19 +69,19 @@
                 <span class="room-card-status">{{ room.users.length }}人</span>
               </div>
               <div class="room-card-players" v-if="room.users.length > 0">
-                <div 
+              <div 
                   v-for="user in room.users" 
-                  :key="user.id"
+                :key="user.id"
                   class="room-card-player"
-                >
+              >
                   {{ user.username }}
-                </div>
               </div>
+            </div>
               <div class="room-card-footer">
                 <span v-if="room.game_started" class="status-badge playing">游戏中</span>
                 <span v-else class="status-badge available">可加入</span>
               </div>
-            </div>
+          </div>
           </div>
           
         </div>
@@ -129,14 +129,14 @@
               <div class="chinese-container" style="position: relative;">
                 <!-- 所有玩家的光标（包括当前用户） -->
                 <template v-for="(progress, userId) in allPlayersProgress" :key="userId">
-                  <span
+                <span
                     v-if="gameStarted && progress.cursor_position !== null && progress.cursor_position !== undefined"
                     class="cursor player-cursor"
-                    :style="{
+                  :style="{
                       left: progress.cursor_position + 'px',
                       top: progress.cursor_line + 'px',
                       background: getCursorColor(userId)
-                    }"
+                  }"
                   >
                     <span 
                       class="cursor-label"
@@ -144,7 +144,7 @@
                     >{{ progress.username }}</span>
                   </span>
                 </template>
-                
+
                 <!-- 当前用户在比赛文本上的光标（显示已完成位置） -->
                 <span
                   v-if="gameStarted && roomType === 'chinese' && chineseCompletedLength > 0"
@@ -215,7 +215,7 @@
                 >
                   <!-- 所有玩家的光标 -->
                   <template v-for="(progress, userId) in allPlayersProgress" :key="userId">
-                    <span 
+                  <span 
                       v-if="gameStarted && item.wordIndex === progress.word_index && progress.cursor_position !== null"
                       class="cursor player-cursor"
                       :style="{ 
@@ -223,7 +223,7 @@
                         background: getCursorColor(userId)
                       }"
                     >
-                      <span 
+                  <span 
                         class="cursor-label"
                         :class="getLabelClassForWord(item.wordIndex)"
                       >{{ progress.username }}</span>
@@ -830,15 +830,15 @@ export default {
           this.updateMyCursorPosition()
           return
         }
-        
+
         // 如果不在输入拼音（说明是直接输入或者选词完毕），且输入框里有内容
         // 注意：compositionEnd 会处理大部分情况，但为了兼容直接粘贴或非IME输入，这里也处理
         if (this.currentInput && this.currentInput.length > 0) {
           this.handleChineseInput(this.currentInput)
         } else {
           // 输入框为空，只更新光标位置
-          this.updateMyCursorPosition()
-          this.sendProgress()
+        this.updateMyCursorPosition()
+        this.sendProgress()
           this.updateMyProgressInAllPlayers()
         }
       } else {
@@ -1082,8 +1082,8 @@ export default {
       
       // 立即更新光标位置，避免跳转
       this.$nextTick(() => {
-        this.updateMyCursorPosition()
-        this.sendProgress()
+      this.updateMyCursorPosition()
+      this.sendProgress()
         this.updateMyProgressInAllPlayers()
       })
     },
@@ -1117,8 +1117,8 @@ export default {
       
       // 立即更新光标位置，避免跳转
       this.$nextTick(() => {
-        this.updateMyCursorPosition()
-        this.sendProgress()
+      this.updateMyCursorPosition()
+      this.sendProgress()
         this.updateMyProgressInAllPlayers()
       })
     },

@@ -630,7 +630,7 @@ async def handle_websocket_message(user_id: str, message: Dict):
         
         # 启动倒计时
         asyncio.create_task(game_manager.start_countdown(room_id))
-    
+        
     elif message_type == 'start_solo_practice':
         """开始单人练习模式（保留兼容性）"""
         user_data = game_manager.user_data.get(user_id, {})
